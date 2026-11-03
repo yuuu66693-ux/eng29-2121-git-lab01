@@ -1,6 +1,8 @@
+from contextlib import redirect_stdout
+from io import StringIO
 import unittest
 
-from electrical import analyze_dc
+from electrical import analyze_dc, main
 
 
 class TestDCAnalyzer(unittest.TestCase):
@@ -19,6 +21,13 @@ class TestDCAnalyzer(unittest.TestCase):
 			with self.subTest(resistance=resistance):
 				with self.assertRaises(ValueError):
 					analyze_dc(12, resistance)
+
+	def test_report_includes_units(self):
+		output = StringIO()
+		with redirect_stdout(output):
+			main()
+
+		self.assertEqual(output.getvalue(), "Current: 2.0 A\nPower: 24.0 W\n")
 
 
 if __name__ == "__main__":
