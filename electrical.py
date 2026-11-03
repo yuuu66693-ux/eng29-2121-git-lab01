@@ -7,5 +7,11 @@ def analyze_dc(voltage_v, resistance_ohm):
 	return {"current_a": current_a, "power_w": power_w}
 
 
+def main():
+	result = analyze_dc(12, 6)
+	print(f"Current: {result['current_a']} A")
+	print(f"Power: {result['power_w']} W")
+
+
 if __name__ == "__main__":
-	print(analyze_dc(12, 6))
+	main()
