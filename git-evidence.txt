@@ -1,0 +1,49 @@
+DC Circuit Calculator - Git and Test Evidence
+
+The following Git status was captured after pushing the project commits to GitHub and before adding these submission documents:
+
+> git status --short --branch
+## main...origin/main
+?? EN29_2121_Lab01_B6808730.zip
+?? git-evidence.txt
+?? github-repo-url.txt
+?? reflection.txt
+
+> git log --oneline --graph --decorate main feature/report-unit origin/feature/input-validation -10
+*   03305fb (HEAD -> main, origin/main, origin/HEAD) merge: report units feature
+|\
+| * 834662d (feature/report-unit) feat: add units to calculator report
+|/
+*   54301df merge: GitHub remote history
+|\
+| * a643c63 Initial commit
+*   e554713 merge: input validation
+|\
+| * 40b66ab (origin/feature/input-validation) feat: validate positive resistance
+|/
+*   6b872e2 test: verify DC circuit results
+*   d233814 test: verify DC circuit results
+
+> git remote -v
+origin  https://github.com/yuuu66693-ux/eng29-2121-git-lab01.git (fetch)
+origin  https://github.com/yuuu66693-ux/eng29-2121-git-lab01.git (push)
+
+> git branch -avv
+  feature/report-unit                     834662d feat: add units to calculator report
+* main                                    03305fb [origin/main] merge: report units feature
+  remotes/origin/HEAD                     -> origin/main
+  remotes/origin/feature/input-validation 40b66ab feat: validate positive resistance
+  remotes/origin/main                     03305fb merge: report units feature
+
+> python -m unittest -v
+test_invalid_resistance (test_electrical.TestDCAnalyzer.test_invalid_resistance) ... ok
+test_known_values (test_electrical.TestDCAnalyzer.test_known_values) ... ok
+test_report_includes_units (test_electrical.TestDCAnalyzer.test_report_includes_units) ... ok
+test_zero_voltage (test_electrical.TestDCAnalyzer.test_zero_voltage) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+
+The project commits were pushed to origin/main. A fresh clone of the GitHub main branch was also tested with `python -m unittest -v`; all 4 tests passed.
