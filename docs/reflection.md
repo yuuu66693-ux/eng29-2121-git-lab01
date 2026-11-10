@@ -1,22 +1,29 @@
-# Reflection — Lab 02
+# Reflection — Lab 02 (BJT DC Bias Web App)
 
-## What I built
-I built a multi-file Flask web application for DC bias analysis of an NPN common-emitter amplifier using voltage-divider bias. The project separates responsibilities clearly:
-- `dc_bias.py`: engineering calculations, region detection, and validation (pure Python, no web dependencies)
-- `app.py`: HTTP routes (`GET /`, `POST /calculate`), form parsing/unit conversion, and template rendering
-- `templates/index.html` + `static/style.css`: user interface (3-column card layout, SVG circuit, form/results, warnings/status)
-- `tests/`: automated `unittest` coverage for engineering logic and Flask HTTP behavior
+## 1) สิ่งที่พัฒนา (What I built)
+พัฒนา Flask Web Application แบบหลายไฟล์สำหรับคำนวณ DC Operating Point ของวงจร NPN Common-Emitter แบบ Voltage-Divider Bias ภายในขอบเขต DC bias ของ Lab 02 โดยแยกความรับผิดชอบของระบบอย่างชัดเจน:
+- `dc_bias.py`: คำนวณทางวิศวกรรม (VTH, RTH, IB, IC, IE, VB, VE, VC, VCE), ตรวจ Operating Region (Active/Cutoff/Saturation), ตรวจ validation อินพุต และสร้าง warning โดยไม่พึ่งพา Flask/HTML
+- `app.py`: รับ HTTP request (`GET /`, `POST /calculate`), อ่านค่าจากฟอร์ม, แปลงหน่วยตัวต้านทาน (Ω/kΩ/MΩ) เป็น SI, เรียกคำนวณจาก backend และส่งผลไปแสดงผ่าน template
+- `templates/index.html` + `static/style.css`: หน้าเว็บแบบ 3 คอลัมน์ (ฟอร์มพารามิเตอร์, แผนผังวงจร SVG, ผลลัพธ์และสถานะ), แสดงหน่วย/คำเตือน/ข้อผิดพลาด และรองรับการอ่านค่าได้ชัดเจน
+- `tests/`: ทดสอบอัตโนมัติด้วย `unittest` ทั้งส่วนคำนวณและส่วนเว็บ
 
-## What I verified
-- Automated tests: `python -m unittest discover -s tests -v` → **8 tests passed** (5 engineering/validation, 3 web).
-- Reference case (VCC=12 V, R1=100 kΩ, R2=22 kΩ, RC=2.2 kΩ, RE=1 kΩ, β=100, VBE=0.7 V) matches independent calculations: VB≈1.942 V, VE≈1.242 V, VC≈9.294 V, VCE≈8.052 V, IC≈1.230 mA, Region Active.
-- Warning/validation behavior: cutoff and saturation cases produce region warnings; invalid inputs (e.g. R1=0, missing/non-numeric) produce clear errors without crashing.
-- Browser smoke check: app runs on `http://127.0.0.1:5000/`, accepts form input, calculates via backend, and displays results/region/warnings.
+## 2) สิ่งที่ตรวจสอบ (What I verified)
+- **Automated tests:** `python -m unittest discover -s tests -v` ผ่าน **8/8** (5 engineering/validation + 3 Flask HTTP)
+- **ค่าอ้างอิง (ข้อ 06):** VCC=12 V, R1=100 kΩ, R2=22 kΩ, RC=2.2 kΩ, RE=1 kΩ, β=100, VBE=0.7 V → VB=1.942 V, VE=1.242 V, VC=9.294 V, VCE=8.052 V, IC=1.230 mA, Region **Active** ตรงกับการคำนวณอิสระ
+- **เปลี่ยนค่าอินพุตหลายชุด:** ผลลัพธ์จากระบบเปลี่ยนตามและตรงกับการคำนวณอิสระ (รวมกรณีหน่วยผสม Ω/kΩ/MΩ) ยืนยันว่าไม่ใช่ค่าคงที่ฮาร์ดโค้ด
+- **Validation:** ค่า R≤0, β≤0, VCC≤0, VBE≤0, ค่าว่าง หรือไม่ใช่ตัวเลข ให้ข้อความผิดพลาดชัดเจนและไม่ทำให้แอปล้ม
+- **Region/Warning:** กรณี Cutoff (`VTH ≤ VBE`) และ Saturation (`VCE ≤ 0.2 V`) แสดงสถานะและคำเตือนว่าอยู่นอกสมมติฐาน Forward-Active และผลไม่ควรถือว่าเชื่อถือได้
+- **Browser smoke test:** เปิดผ่าน `http://127.0.0.1:5000/`, กรอกค่า/กดคำนวณ, เห็นผลลัพธ์พร้อมหน่วยและสถานะบนหน้าเว็บจริง
 
-## What I learned
-- A real web app needs clear separation between **frontend presentation** (template/CSS), **backend routing** (Flask), and **engineering logic** (Python module). Opening an HTML file directly (`file://`) cannot replace server-side calculation.
-- Validation and assumption checks are part of engineering software quality: correct formulas alone are not enough if out-of-region results are shown without warnings.
-- Unit handling (Ω/kΩ/MΩ) must be normalized before computation to avoid silent scaling errors.
+## 3) สิ่งที่ได้เรียนรู้ (What I learned)
+- การแยก **Frontend (Template/CSS)**, **Backend Route (Flask)** และ **Engineering Logic (Python module)** ทำให้ทดสอบและแก้ไขง่ายขึ้น โดยเฉพาะเมื่อสมการอยู่ใน `dc_bias.py` เพียงที่เดียว
+- ซอฟต์แวร์ทางวิศวกรรมต้องไม่แสดงแค่ “ตัวเลขที่คำนวณได้” แต่ต้องสื่อ **หน่วย สมมติฐาน ขอบเขตของแบบจำลอง และคำเตือน** เมื่อผลอยู่นอกเงื่อนไขที่โมเดลใช้ได้
+- การแปลงหน่วย (เช่น kΩ/MΩ → Ω) เป็นจุดที่ต้องทำอย่างเป็นระบบก่อนคำนวณ มิฉะนั้นจะเกิดความคลาดเคลื่อนโดยไม่ตั้งใจ
+- Automated tests ช่วยยืนยันได้เร็วว่าการแก้ UI หรือ route ไม่ทำให้ผลคำนวณทางวิศวกรรมเพี้ยน
 
-## AI/tooling note
-OpenCode with Superpowers skills was used to follow a structured workflow (brainstorming/design approval → implementation planning → task execution with tests). I reviewed the design, approved the plan, and verified outputs against the lab requirements and independent calculations before treating results as complete. Any generated code and results still require human review and engineering judgment.
+## 4) การใช้เครื่องมือ/AI (AI & tooling note)
+ใช้ OpenCode ร่วมกับ Superpowers workflow ตามลำดับ brainstorming/design → แผนงาน → พัฒนาแบบเป็นขั้น (TDD) → ตรวจสอบผล โดยข้าพเจ้าตรวจทานขอบเขตงานตามไฟล์ Lab 02, อนุมัติแนวทาง/แผน, ตรวจผลลัพธ์เทียบการคำนวณอิสระ และยืนยันการรันเทสต์/การทำงานบนเบราว์เซอร์ก่อนสรุปความถูกต้องของระบบ โค้ดและผลลัพธ์ที่ได้ยังคงต้องผ่านการตรวจสอบและความรับผิดชอบด้านวิศวกรรมของผู้พัฒนา/ผู้ส่งงาน
+
+## 5) ข้อจำกัดและงานต่อยอด
+- แบบจำลองปัจจุบันเป็น Forward-Active approximation (β คงที่, VBE คงที่) ไม่ใช่ SPICE และไม่ครอบคลุม AC/Transient ใน Lab นี้
+- งานต่อยอดตามแผนรายวิชา: รองรับ bias type อื่น, วิเคราะห์ AC/small-signal, transient และการแสดงผลเชิงโต้ตอบเพิ่มเติมในสัปดาห์ถัดไป
