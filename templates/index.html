@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lab 02 — BJT DC Bias Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    {% set inp = inputs or {} %}
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">⚡</div>
+        <div>
+          <div class="course">Computer Programming for Electrical Engineers</div>
+          <h1>BJT DC Bias Calculator <span class="sub">(Voltage-Divider Bias / ไบอัสแบบแบ่งแรงดัน)</span></h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      {% if errors %}
+      <section class="alert alert-error" role="alert">
+        <h2>Input Error / ข้อมูลนำเข้าไม่ถูกต้อง</h2>
+        <ul>
+          {% for e in errors %}
+          <li><strong>{{ e.field or "input" }}:</strong> {{ e.message }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if warnings %}
+      <section class="alert alert-warning" role="alert">
+        <h2>Warning / คำเตือน</h2>
+        <ul>
+          {% for w in warnings %}
+          <li>{{ w }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      <div class="grid">
+        <section class="card">
+          <h2>Input Parameters / พารามิเตอร์วงจร</h2>
+          <form method="post" action="/calculate" class="form-grid" novalidate>
+            <div class="field">
+              <label for="vcc">VCC <span class="hint">(Supply Voltage / แรงดันจ่าย)</span></label>
+              <div class="input-row">
+                <input id="vcc" name="vcc" type="number" step="any" value="{{ inp.get('vcc','') }}" required />
+                <span class="unit">V</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="r1">R1 <span class="hint">(Upper divider / ตัวแบ่งบน)</span></label>
+              <div class="input-row">
+                <input id="r1" name="r1" type="number" step="any" value="{{ inp.get('r1','') }}" required />
+                <select name="r1_unit" aria-label="R1 unit">
+                  {% for u in ['Ω','kΩ','MΩ'] %}
+                  <option value="{{ u }}" {% if inp.get('r1_unit','Ω') == u %}selected{% endif %}>{{ u }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="r2">R2 <span class="hint">(Lower divider / ตัวแบ่งล่าง)</span></label>
+              <div class="input-row">
+                <input id="r2" name="r2" type="number" step="any" value="{{ inp.get('r2','') }}" required />
+                <select name="r2_unit" aria-label="R2 unit">
+                  {% for u in ['Ω','kΩ','MΩ'] %}
+                  <option value="{{ u }}" {% if inp.get('r2_unit','Ω') == u %}selected{% endif %}>{{ u }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="rc">RC <span class="hint">(Collector resistor)</span></label>
+              <div class="input-row">
+                <input id="rc" name="rc" type="number" step="any" value="{{ inp.get('rc','') }}" required />
+                <select name="rc_unit" aria-label="RC unit">
+                  {% for u in ['Ω','kΩ','MΩ'] %}
+                  <option value="{{ u }}" {% if inp.get('rc_unit','Ω') == u %}selected{% endif %}>{{ u }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="re">RE <span class="hint">(Emitter resistor)</span></label>
+              <div class="input-row">
+                <input id="re" name="re" type="number" step="any" value="{{ inp.get('re','') }}" required />
+                <select name="re_unit" aria-label="RE unit">
+                  {% for u in ['Ω','kΩ','MΩ'] %}
+                  <option value="{{ u }}" {% if inp.get('re_unit','Ω') == u %}selected{% endif %}>{{ u }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="beta">β (Beta) <span class="hint">(DC current gain / อัตราขยายกระแส)</span></label>
+              <div class="input-row">
+                <input id="beta" name="beta" type="number" step="any" value="{{ inp.get('beta','') }}" required />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="vbe">VBE <span class="hint">(Base-Emitter voltage)</span></label>
+              <div class="input-row">
+                <input id="vbe" name="vbe" type="number" step="any" value="{{ inp.get('vbe','') }}" required />
+                <span class="unit">V</span>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="btn-primary">Calculate DC Bias / คำนวณจุดทำงาน DC</button>
+            </div>
+          </form>
+          <p class="note">Assumption / สมมติฐาน: NPN, constant β, constant VBE, Forward-Active approximation.</p>
+        </section>
+
+        <section class="card">
+          <h2>Circuit Diagram / แผนผังวงจร</h2>
+          <div class="circuit-wrap">
+            <svg viewBox="0 0 420 360" class="circuit" aria-label="NPN common-emitter voltage-divider bias circuit">
+              <defs>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#334155" />
+                </marker>
+              </defs>
+              <!-- rails -->
+              <line x1="40" y1="40" x2="360" y2="40" stroke="#334155" stroke-width="2" />
+              <text x="200" y="28" text-anchor="middle" class="svg-label">VCC = {{ inp.get('vcc','-') }} V</text>
+              <line x1="200" y1="320" x2="200" y2="340" stroke="#334155" stroke-width="2" />
+              <line x1="180" y1="340" x2="220" y2="340" stroke="#334155" stroke-width="2" />
+              <line x1="188" y1="348" x2="212" y2="348" stroke="#334155" stroke-width="2" />
+              <line x1="196" y1="356" x2="204" y2="356" stroke="#334155" stroke-width="2" />
+              <!-- R1 -->
+              <line x1="120" y1="40" x2="120" y2="90" stroke="#334155" stroke-width="2" />
+              <polyline points="120,90 110,100 130,115 110,130 130,145 110,160 130,175 120,185" fill="none" stroke="#334155" stroke-width="2" />
+              <line x1="120" y1="185" x2="120" y2="210" stroke="#334155" stroke-width="2" />
+              <text x="78" y="140" class="svg-label">R1</text>
+              <text x="78" y="156" class="svg-small">{{ inp.get('r1','-') }} {{ inp.get('r1_unit','') }}</text>
+              <!-- R2 -->
+              <line x1="120" y1="210" x2="120" y2="230" stroke="#334155" stroke-width="2" />
+              <polyline points="120,230 110,240 130,255 110,270 130,285 110,300 130,315 120,325" fill="none" stroke="#334155" stroke-width="2" />
+              <line x1="120" y1="325" x2="120" y2="340" stroke="#334155" stroke-width="2" />
+              <line x1="120" y1="340" x2="200" y2="340" stroke="#334155" stroke-width="2" />
+              <text x="78" y="275" class="svg-label">R2</text>
+              <text x="78" y="291" class="svg-small">{{ inp.get('r2','-') }} {{ inp.get('r2_unit','') }}</text>
+              <!-- RC -->
+              <line x1="260" y1="40" x2="260" y2="90" stroke="#334155" stroke-width="2" />
+              <polyline points="260,90 250,100 270,115 250,130 270,145 250,160 270,175 260,185" fill="none" stroke="#334155" stroke-width="2" />
+              <line x1="260" y1="185" x2="260" y2="210" stroke="#334155" stroke-width="2" />
+              <text x="282" y="140" class="svg-label">RC</text>
+              <text x="282" y="156" class="svg-small">{{ inp.get('rc','-') }} {{ inp.get('rc_unit','') }}</text>
+              <!-- NPN transistor -->
+              <circle cx="230" cy="220" r="34" fill="none" stroke="#334155" stroke-width="2" />
+              <line x1="220" y1="195" x2="220" y2="245" stroke="#334155" stroke-width="3" />
+              <line x1="120" y1="220" x2="220" y2="220" stroke="#334155" stroke-width="2" />
+              <line x1="220" y1="205" x2="260" y2="185" stroke="#334155" stroke-width="2" />
+              <line x1="220" y1="235" x2="260" y2="255" stroke="#334155" stroke-width="2" />
+              <polygon points="260,255 248,250 252,240" fill="#334155" />
+              <text x="238" y="224" class="svg-label">Q1</text>
+              <text x="170" y="212" class="svg-small">B</text>
+              <text x="248" y="178" class="svg-small">C</text>
+              <text x="248" y="270" class="svg-small">E</text>
+              <!-- RE -->
+              <line x1="260" y1="255" x2="260" y2="275" stroke="#334155" stroke-width="2" />
+              <polyline points="260,275 250,285 270,300 250,315 270,330 250,345 270,360 260,370" fill="none" stroke="#334155" stroke-width="2" transform="translate(0,-35)" />
+              <line x1="260" y1="335" x2="260" y2="340" stroke="#334155" stroke-width="2" />
+              <line x1="260" y1="340" x2="200" y2="340" stroke="#334155" stroke-width="2" />
+              <text x="282" y="305" class="svg-label">RE</text>
+              <text x="282" y="321" class="svg-small">{{ inp.get('re','-') }} {{ inp.get('re_unit','') }}</text>
+              <!-- node dots -->
+              <circle cx="120" cy="210" r="3" fill="#334155" />
+              <circle cx="260" cy="210" r="3" fill="#334155" />
+              <circle cx="260" cy="255" r="3" fill="#334155" />
+              <text x="330" y="70" class="svg-small">β={{ inp.get('beta','-') }}</text>
+              <text x="330" y="86" class="svg-small">VBE={{ inp.get('vbe','-') }} V</text>
+            </svg>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>DC Bias Results / ผลลัพธ์จุดทำงาน DC</h2>
+          {% if results %}
+          <table class="results-table">
+            <tbody>
+              <tr><th>VB</th><td>{{ "%.3f"|format(results.vb_v) }} V</td></tr>
+              <tr><th>VE</th><td>{{ "%.3f"|format(results.ve_v) }} V</td></tr>
+              <tr><th>VC</th><td>{{ "%.3f"|format(results.vc_v) }} V</td></tr>
+              <tr><th>VCE</th><td>{{ "%.3f"|format(results.vce_v) }} V</td></tr>
+              <tr><th>IB</th><td>{{ "%.3f"|format(results.ib_ma) }} mA</td></tr>
+              <tr><th>IC</th><td>{{ "%.3f"|format(results.ic_ma) }} mA</td></tr>
+              <tr><th>IE</th><td>{{ "%.3f"|format(results.ie_ma) }} mA</td></tr>
+            </tbody>
+          </table>
+
+          <div class="status-box status-{{ region }}">
+            <div class="status-title">Operating Region Status / สถานะการทำงาน</div>
+            <div class="status-value">{{ (region or 'unknown')|upper }}</div>
+            {% if region == 'active' %}
+            <div class="status-note">Forward-Active approximation is applicable for this operating point.</div>
+            {% else %}
+            <div class="status-note">Outside Forward-Active assumption. Do not treat these values as trustworthy DC bias results without the warning above.</div>
+            {% endif %}
+          </div>
+          {% else %}
+          <p class="muted">กรอกค่าและกด <strong>Calculate DC Bias</strong> เพื่อแสดงผลลัพธ์ / Enter values and click Calculate to see results.</p>
+          {% endif %}
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <strong>Week 2 Goal:</strong> Flask Web App for BJT DC Bias (Voltage Divider) — form input → Python backend calculation → display VB, VE, VC, VCE, IC, IB, IE with Operating Region and warnings.
+    </footer>
+  </body>
+</html>
